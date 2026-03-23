@@ -1,3 +1,5 @@
+<div align="center">
+
 # Cipher MCP
 
 Classical cipher workflows for AI agents.
@@ -8,7 +10,9 @@ Install one MCP server. Your agent can encrypt, decrypt, normalize, validate, an
 [![npm downloads](https://img.shields.io/npm/dm/cipher-mcp.svg)](https://www.npmjs.com/package/cipher-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-[npm](https://www.npmjs.com/package/cipher-mcp) | [GitHub](https://github.com/itsalissonsilva/CipherMCP) | [Contributing](./CONTRIBUTING.md)
+[npm](https://www.npmjs.com/package/cipher-mcp) · [GitHub](https://github.com/itsalissonsilva/CipherMCP) · [Contributing](./CONTRIBUTING.md)
+
+</div>
 
 ---
 
@@ -36,6 +40,14 @@ Agent needs to work with a cipher
 
 ## Quick Start
 
+Run it directly:
+
+```powershell
+npx cipher-mcp
+```
+
+Then add it to your MCP client.
+
 Claude Code / Codex / other stdio MCP clients:
 
 ```json
@@ -47,12 +59,6 @@ Claude Code / Codex / other stdio MCP clients:
     }
   }
 }
-```
-
-Run it directly:
-
-```powershell
-npx cipher-mcp
 ```
 
 For local development:
