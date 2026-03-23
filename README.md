@@ -1,39 +1,42 @@
-# cipher-mcp
+# Cipher MCP
 
-Classical cipher tools for AI agents.
+Classical cipher workflows for AI agents.
 
-Install one MCP server and get encryption, decryption, normalization, key generation, validation, examples, and lightweight cipher detection in one place.
+Install one MCP server. Your agent can encrypt, decrypt, normalize, validate, and explore ciphers in one place.
 
-[cipher.tools](https://cipher.tools/) powers the live encode/decode/cipher-list endpoints. Everything else is local, fast, and works even when the upstream API is unavailable.
+[![npm version](https://img.shields.io/npm/v/cipher-mcp.svg)](https://www.npmjs.com/package/cipher-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/cipher-mcp.svg)](https://www.npmjs.com/package/cipher-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+[npm](https://www.npmjs.com/package/cipher-mcp) | [GitHub](https://github.com/itsalissonsilva/CipherMCP) | [Contributing](./CONTRIBUTING.md)
 
 ---
 
+Cipher MCP is an MCP server built for classical cipher workflows. It wraps the public [cipher.tools](https://cipher.tools/) API for live encryption and decryption, then adds the local helper tools that agents actually need in practice: text normalization, key validation, random key generation, examples, and heuristic cipher detection.
+
 ## Why?
 
-Most MCP clients can call tools, but they still need a good cryptography workflow around them:
+Most MCP setups can call tools, but classical ciphers still involve a lot of manual setup around the actual cipher operation:
 
-- text often needs to be normalized before classical ciphers behave predictably
-- keys need basic validation before an API call fails
-- agents benefit from examples and random key generation when exploring ciphers
-- heuristic guidance helps when you only have a mystery ciphertext sample
+- plaintext often needs normalization before results are predictable
+- keys need shape checks before an upstream API call fails
+- agents benefit from examples when exploring unfamiliar cipher families
+- mystery ciphertext often needs some lightweight local analysis before choosing a tool
 
-`cipher-mcp` wraps the public `cipher.tools` API and adds the local ergonomics around it.
+Cipher MCP closes that gap:
+
+```text
+Agent needs to work with a cipher
+  -> normalize_text(...)
+  -> validate_cipher_input(...)
+  -> encrypt_text(...) or decrypt_text(...)
+  -> detect_possible_ciphers(...) when the input is unknown
+  -> examples_for_cipher(...) for fast experimentation
+```
 
 ## Quick Start
 
-Run it with `npx` once published:
-
-```powershell
-npx cipher-mcp
-```
-
-Or run it locally with Node:
-
-```powershell
-node C:\Users\Lenovo\Documents\CipherMCP\bin\cipher-mcp.js
-```
-
-Add it to an MCP client:
+Claude Code / Codex / other stdio MCP clients:
 
 ```json
 {
@@ -46,7 +49,13 @@ Add it to an MCP client:
 }
 ```
 
-For local development without publishing:
+Run it directly:
+
+```powershell
+npx cipher-mcp
+```
+
+For local development:
 
 ```json
 {
@@ -81,7 +90,7 @@ $env:CIPHERTOOLS_API_BASE_URL="https://cipher.tools/api/v1"
 
 ## How It Works
 
-This server combines two layers:
+Cipher MCP combines two layers:
 
 1. Upstream API wrappers
    - `encrypt_text`
@@ -95,24 +104,14 @@ This server combines two layers:
    - `examples_for_cipher`
    - `detect_possible_ciphers`
 
-That split is intentional. The upstream API handles the actual cipher operations, while the local tools make the MCP more useful in real agent workflows.
+That split is intentional. The upstream API handles the actual cipher operations, while the local tools make the MCP much easier to use in real agent workflows.
 
-## Example Workflows
-
-Normalize before encryption:
+### Example Flow
 
 ```text
 normalize_text({
   "text": "Meet me at dawn!",
   "preserveSpaces": true
-})
-```
-
-Validate and generate a key:
-
-```text
-random_key({
-  "cipher": "affine"
 })
 
 validate_cipher_input({
@@ -120,31 +119,15 @@ validate_cipher_input({
   "key": "5 13",
   "text": "MEET ME AT DAWN"
 })
-```
 
-Encrypt with the live API:
-
-```text
 encrypt_text({
-  "cipher": "caesar",
-  "key": "2",
-  "plaintext": "THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG"
+  "cipher": "affine",
+  "key": "5 13",
+  "plaintext": "MEET ME AT DAWN"
 })
 ```
 
-Explore an unfamiliar cipher:
-
-```text
-examples_for_cipher({
-  "cipher": "vigenere"
-})
-
-detect_possible_ciphers({
-  "text": "LXFOPVEFRNHR"
-})
-```
-
-## Built-in Support
+### Built-in Support
 
 The strongest local support currently targets a curated set of common classical ciphers:
 
@@ -156,11 +139,21 @@ The strongest local support currently targets a curated set of common classical 
 - `railfence`
 - `columnartransposition`
 
-For other cipher names, the MCP still supports upstream encryption and decryption as long as `cipher.tools` does, but local validation and key generation may fall back to generic behavior.
+For other cipher names, Cipher MCP still supports upstream encryption and decryption as long as `cipher.tools` does, but local validation and key generation may fall back to generic behavior.
+
+## Security
+
+Important:
+
+- live cipher operations call the public `cipher.tools` API over the network
+- helper tools such as normalization, validation, key generation, examples, and heuristic detection run locally
+- no private backend is involved in this project
+
+If you are working with sensitive material, treat `encrypt_text` and `decrypt_text` as remote API calls rather than offline cryptography primitives.
 
 ## Upstream API
 
-This project wraps the public endpoints documented on [cipher.tools](https://cipher.tools/):
+Cipher MCP currently wraps the public endpoints documented on [cipher.tools](https://cipher.tools/):
 
 - `GET /api/v1/encode`
 - `GET /api/v1/decode`
@@ -173,25 +166,33 @@ Current assumptions:
 
 ## Development
 
-Requirements:
-
-- Node.js 18+ with global `fetch`
-
-Run tests:
-
 ```powershell
-node C:\Users\Lenovo\Documents\CipherMCP\test\server.test.mjs
+git clone https://github.com/itsalissonsilva/CipherMCP.git
+cd CipherMCP
+node test/server.test.mjs
 ```
 
-Recent verification:
+Test locally with an MCP client:
 
-- local test suite passed: 19/19 tests
-- live `health_check` succeeded against `https://cipher.tools/api/v1`
+```json
+{
+  "mcpServers": {
+    "cipher-dev": {
+      "command": "node",
+      "args": ["C:\\Users\\Lenovo\\Documents\\CipherMCP\\bin\\cipher-mcp.js"]
+    }
+  }
+}
+```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## Roadmap
 
-- polish responses into richer structured MCP output
-- add more built-in cipher validators and key generators
-- add true ciphertext analysis helpers like frequency counts and index of coincidence
-- package for easier npm-style installation
-- publish distribution metadata for MCP directories and registries
+### Features
+
+- richer structured MCP outputs instead of text-only JSON blocks
+- more built-in validators and key generators for additional ciphers
+- better ciphertext analysis helpers such as frequency counts and index of coincidence
+- registry metadata and distribution polish for MCP directories
+- optional CLI helpers for humans working with cipher samples
