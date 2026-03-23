@@ -16,7 +16,7 @@ Install one MCP server. Your agent can encrypt, decrypt, normalize, validate, an
 
 ---
 
-Cipher MCP is an MCP server built for classical cipher workflows. It wraps the public [cipher.tools](https://cipher.tools/) API for live encryption and decryption, then adds the local helper tools that agents actually need in practice: text normalization, key validation, random key generation, examples, and heuristic cipher detection.
+Cipher MCP is an MCP server built for classical cipher workflows. It wraps the public [cipher.tools](https://cipher.tools/) API for live encryption and decryption, supporting all 72 ciphers of the tool, then adds the local helper tools that agents actually need in practice: text normalization, key validation, random key generation, examples, and heuristic cipher detection.
 
 ## Why?
 
