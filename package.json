@@ -1,0 +1,41 @@
+{
+  "name": "cipher-mcp",
+  "version": "0.2.0",
+  "description": "An MCP server for classical cipher workflows powered by cipher.tools.",
+  "type": "module",
+  "bin": {
+    "cipher-mcp": "./bin/cipher-mcp.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "server.json"
+  ],
+  "scripts": {
+    "start": "node bin/cipher-mcp.js",
+    "test": "node test/server.test.mjs",
+    "prepublishOnly": "node test/server.test.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cipher",
+    "cryptography",
+    "classical-ciphers"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsalissonsilva/CipherMCP.git"
+  },
+  "homepage": "https://github.com/itsalissonsilva/CipherMCP#readme",
+  "bugs": {
+    "url": "https://github.com/itsalissonsilva/CipherMCP/issues"
+  }
+}

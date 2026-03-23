@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.itsalissonsilva/cipher-mcp",
+  "description": "Classical cipher tools for AI agents.\nEncrypt, decrypt, normalize, validate, and explore ciphers through one MCP server.",
+  "repository": {
+    "url": "https://github.com/itsalissonsilva/CipherMCP",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "cipher-mcp",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "encrypt_text",
+      "description": "Encrypt plaintext with a selected cipher and key via cipher.tools."
+    },
+    {
+      "name": "decrypt_text",
+      "description": "Decrypt ciphertext with a selected cipher and key via cipher.tools."
+    },
+    {
+      "name": "list_ciphers",
+      "description": "Fetch the current upstream cipher list."
+    },
+    {
+      "name": "normalize_text",
+      "description": "Uppercase text, strip punctuation, and optionally preserve spaces."
+    },
+    {
+      "name": "validate_cipher_input",
+      "description": "Catch bad key shapes and text compatibility issues before API calls."
+    },
+    {
+      "name": "random_key",
+      "description": "Generate a plausible key for supported cipher families."
+    },
+    {
+      "name": "health_check",
+      "description": "Verify upstream reachability and report latency."
+    },
+    {
+      "name": "examples_for_cipher",
+      "description": "Return ready-to-run sample inputs for common ciphers."
+    },
+    {
+      "name": "detect_possible_ciphers",
+      "description": "Heuristically guess likely cipher families from text shape."
+    }
+  ]
+}
