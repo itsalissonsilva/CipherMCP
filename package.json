@@ -4,7 +4,7 @@
   "description": "An MCP server for classical cipher workflows powered by cipher.tools.",
   "type": "module",
   "bin": {
-    "cipher-mcp": "./bin/cipher-mcp.js"
+    "cipher-mcp": "bin/cipher-mcp.js"
   },
   "files": [
     "bin",
