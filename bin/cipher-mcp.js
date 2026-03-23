@@ -1,3 +1,5 @@
 #!/usr/bin/env node
 
-import "../src/index.mjs";
+import { startStdioServer } from "../src/index.mjs";
+
+startStdioServer();

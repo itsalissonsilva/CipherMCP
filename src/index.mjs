@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 export const SERVER_INFO = {
   name: "cipher-mcp",
-  version: "0.2.0",
+  version: "0.2.1",
 };
 
 const API_BASE_URL = process.env.CIPHERTOOLS_API_BASE_URL ?? "https://cipher.tools/api/v1";
@@ -775,9 +775,7 @@ export function createServerTransport(output = process.stdout) {
   };
 }
 
-const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-
-if (isMainModule) {
+export function startStdioServer() {
   const transport = createServerTransport(process.stdout);
 
   process.stdin.on("data", (chunk) => {
@@ -787,4 +785,10 @@ if (isMainModule) {
   process.stdin.on("end", () => {
     process.exit(0);
   });
+}
+
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMainModule) {
+  startStdioServer();
 }
