@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 
 export const SERVER_INFO = {
   name: "cipher-mcp",
-  version: "0.2.1",
+  version: "0.2.3",
 };
 
+const DEFAULT_PROTOCOL_VERSION = "2025-06-18";
 const API_BASE_URL = process.env.CIPHERTOOLS_API_BASE_URL ?? "https://cipher.tools/api/v1";
 const MAX_TEXT_LENGTH = 500;
 const UPPERCASE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -649,9 +650,65 @@ export async function handleToolCall(name, args = {}) {
 export function createServerTransport(output = process.stdout) {
   let initialized = false;
   let buffer = Buffer.alloc(0);
+  let negotiatedProtocolVersion = DEFAULT_PROTOCOL_VERSION;
+  let transportMode = "content-length";
+
+  function findHeaderEndIndex(sourceBuffer) {
+    const crlfIndex = sourceBuffer.indexOf("\r\n\r\n");
+    if (crlfIndex !== -1) {
+      return { headerEnd: crlfIndex, separatorLength: 4 };
+    }
+
+    const lfIndex = sourceBuffer.indexOf("\n\n");
+    if (lfIndex !== -1) {
+      return { headerEnd: lfIndex, separatorLength: 2 };
+    }
+
+    return null;
+  }
+
+  function tryParseJsonLines() {
+    while (true) {
+      const newlineIndex = buffer.indexOf("\n");
+      if (newlineIndex === -1) {
+        return false;
+      }
+
+      const line = buffer.subarray(0, newlineIndex).toString("utf8").trim();
+      buffer = buffer.subarray(newlineIndex + 1);
+
+      if (line === "") {
+        continue;
+      }
+
+      if (!line.startsWith("{")) {
+        continue;
+      }
+
+      transportMode = "json-lines";
+
+      let parsedMessage;
+      try {
+        parsedMessage = JSON.parse(line);
+      } catch {
+        sendError(null, -32700, "Invalid JSON payload.");
+        continue;
+      }
+
+      void handleRequest(parsedMessage);
+      return true;
+    }
+  }
 
   function writeMessage(message) {
-    const payload = Buffer.from(JSON.stringify(message), "utf8");
+    const payloadText = JSON.stringify(message);
+
+    if (transportMode === "json-lines") {
+      output.write(Buffer.from(`${payloadText}\n`, "utf8"));
+      return;
+    }
+
+    const payload = Buffer.from(payloadText, "utf8");
     const header = Buffer.from(`Content-Length: ${payload.length}\r\n\r\n`, "utf8");
     output.write(Buffer.concat([header, payload]));
   }
@@ -677,13 +734,21 @@ export function createServerTransport(output = process.stdout) {
 
     try {
       if (method === "initialize") {
+        if (typeof params?.protocolVersion === "string" && params.protocolVersion.trim() !== "") {
+          negotiatedProtocolVersion = params.protocolVersion;
+        }
+
         initialized = true;
         sendResult(id, {
-          protocolVersion: "2024-11-05",
+          protocolVersion: negotiatedProtocolVersion,
           capabilities: {
-            tools: {},
+            tools: {
+              listChanged: false,
+            },
           },
           serverInfo: SERVER_INFO,
+          instructions:
+            "Use these tools for classical cipher workflows, including encryption, decryption, normalization, validation, examples, and heuristic detection.",
         });
         return;
       }
@@ -718,16 +783,28 @@ export function createServerTransport(output = process.stdout) {
 
   function tryReadMessages() {
     while (true) {
-      const headerEnd = buffer.indexOf("\r\n\r\n");
-
-      if (headerEnd === -1) {
+      const trimmedPreview = buffer.toString("utf8", 0, Math.min(buffer.length, 32)).trimStart();
+      if (trimmedPreview.startsWith("{")) {
+        const handledJsonLine = tryParseJsonLines();
+        if (!handledJsonLine) {
+          return;
+        }
         return;
       }
+
+      const headerMatch = findHeaderEndIndex(buffer);
+
+      if (!headerMatch) {
+        return;
+      }
+
+      const { headerEnd, separatorLength } = headerMatch;
+      transportMode = "content-length";
 
       const headerText = buffer.subarray(0, headerEnd).toString("utf8");
       const headers = new Map();
 
-      for (const line of headerText.split("\r\n")) {
+      for (const line of headerText.split(/\r?\n/)) {
         const separatorIndex = line.indexOf(":");
         if (separatorIndex === -1) {
           continue;
@@ -746,13 +823,14 @@ export function createServerTransport(output = process.stdout) {
         return;
       }
 
-      const messageEnd = headerEnd + 4 + contentLength;
+      const messageStart = headerEnd + separatorLength;
+      const messageEnd = messageStart + contentLength;
 
       if (buffer.length < messageEnd) {
         return;
       }
 
-      const payload = buffer.subarray(headerEnd + 4, messageEnd).toString("utf8");
+      const payload = buffer.subarray(messageStart, messageEnd).toString("utf8");
       buffer = buffer.subarray(messageEnd);
 
       let parsedMessage;
@@ -777,6 +855,8 @@ export function createServerTransport(output = process.stdout) {
 
 export function startStdioServer() {
   const transport = createServerTransport(process.stdout);
+
+  process.stdin.resume();
 
   process.stdin.on("data", (chunk) => {
     transport.read(chunk);

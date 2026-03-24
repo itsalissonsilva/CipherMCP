@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.3 - 2026-03-23
+
+- added newline-delimited JSON transport support for clients like Cursor that do not use `Content-Length` framing
+- made the server respond in the same transport mode the client uses, fixing Cursor parsing errors on `Content-Length` output
+- kept the stdio startup and initialize negotiation fixes from the previous patch releases
+- updated the README with the working Cursor `npx.cmd` stdio configuration
+- clarified that the upstream `cipher.tools` API currently exposes 72 ciphers
+
+## 0.2.2 - 2026-03-23
+
+- fixed stdio startup by explicitly resuming `stdin` in the server startup path
+- improved MCP initialize negotiation by echoing the client protocol version instead of always returning a fixed older version
+- updated tests to cover the newer initialize handshake shape
+
 ## 0.2.1 - 2026-03-23
 
 - fixed the npm CLI entrypoint so `npx cipher-mcp` starts the stdio server instead of exiting immediately

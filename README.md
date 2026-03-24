@@ -48,12 +48,26 @@ npx cipher-mcp
 
 Then add it to your MCP client.
 
-Claude Code / Codex / other stdio MCP clients:
+Cursor on Windows:
 
 ```json
 {
   "mcpServers": {
-    "ciphertools": {
+    "cipher-mcp": {
+      "type": "stdio",
+      "command": "npx.cmd",
+      "args": ["-y", "cipher-mcp"]
+    }
+  }
+}
+```
+
+Other stdio MCP clients:
+
+```json
+{
+  "mcpServers": {
+    "cipher-mcp": {
       "command": "npx",
       "args": ["-y", "cipher-mcp"]
     }
@@ -66,7 +80,7 @@ For local development:
 ```json
 {
   "mcpServers": {
-    "ciphertools": {
+    "cipher-mcp": {
       "command": "node",
       "args": ["C:\\Users\\Lenovo\\Documents\\CipherMCP\\bin\\cipher-mcp.js"]
     }
@@ -146,6 +160,8 @@ The strongest local support currently targets a curated set of common classical 
 - `columnartransposition`
 
 For other cipher names, Cipher MCP still supports upstream encryption and decryption as long as `cipher.tools` does, but local validation and key generation may fall back to generic behavior.
+
+The upstream API currently exposes 72 ciphers.
 
 ## Security
 

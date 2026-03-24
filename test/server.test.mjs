@@ -11,6 +11,15 @@ function encodeMessage(message) {
   return Buffer.from(`Content-Length: ${payload.length}\r\n\r\n${payload.toString("utf8")}`, "utf8");
 }
 
+function encodeMessageLfOnly(message) {
+  const payload = Buffer.from(JSON.stringify(message), "utf8");
+  return Buffer.from(`Content-Length: ${payload.length}\n\n${payload.toString("utf8")}`, "utf8");
+}
+
+function encodeJsonLineMessage(message) {
+  return Buffer.from(`${JSON.stringify(message)}\n`, "utf8");
+}
+
 function createHarness() {
   let buffer = Buffer.alloc(0);
   const responses = [];
@@ -19,6 +28,23 @@ function createHarness() {
       buffer = Buffer.concat([buffer, chunk]);
 
       while (true) {
+        const trimmedPreview = buffer.toString("utf8", 0, Math.min(buffer.length, 32)).trimStart();
+        if (trimmedPreview.startsWith("{")) {
+          const newlineIndex = buffer.indexOf("\n");
+          if (newlineIndex === -1) {
+            break;
+          }
+
+          const line = buffer.subarray(0, newlineIndex).toString("utf8").trim();
+          buffer = buffer.subarray(newlineIndex + 1);
+
+          if (line !== "") {
+            responses.push(JSON.parse(line));
+          }
+
+          continue;
+        }
+
         const headerEnd = buffer.indexOf("\r\n\r\n");
         if (headerEnd === -1) {
           break;
@@ -50,6 +76,21 @@ function createHarness() {
       const response = responses.shift();
       assert.ok(response, "expected a response from the server");
       return response;
+    },
+    sendLfOnly(message) {
+      transport.read(encodeMessageLfOnly(message));
+      const response = responses.shift();
+      assert.ok(response, "expected a response from the server");
+      return response;
+    },
+    sendJsonLine(message) {
+      transport.read(encodeJsonLineMessage(message));
+      const response = responses.shift();
+      assert.ok(response, "expected a response from the server");
+      return response;
+    },
+    writeJsonLine(message) {
+      transport.read(encodeJsonLineMessage(message));
     },
   };
 }
@@ -91,11 +132,18 @@ function testInitializeAndListTools() {
     jsonrpc: "2.0",
     id: 1,
     method: "initialize",
-    params: {},
+    params: {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: {
+        name: "test-client",
+        version: "1.0.0",
+      },
+    },
   });
 
   assert.equal(init.result.serverInfo.name, SERVER_INFO.name);
-  assert.equal(init.result.protocolVersion, "2024-11-05");
+  assert.equal(init.result.protocolVersion, "2025-06-18");
 
   const tools = client.send({
     jsonrpc: "2.0",
@@ -141,6 +189,69 @@ function testMethodNotFound() {
   });
 
   assert.equal(response.error.code, -32601);
+}
+
+function testInitializeAndListToolsWithLfOnlyHeaders() {
+  const client = createHarness();
+  const init = client.sendLfOnly({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: {
+        name: "test-client",
+        version: "1.0.0",
+      },
+    },
+  });
+
+  assert.equal(init.result.serverInfo.name, SERVER_INFO.name);
+
+  const tools = client.sendLfOnly({
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/list",
+    params: {},
+  });
+
+  assert.equal(tools.result.tools.length, getTools().length);
+}
+
+function testInitializeAndListToolsWithJsonLines() {
+  const client = createHarness();
+  const init = client.sendJsonLine({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-11-25",
+      capabilities: {},
+      clientInfo: {
+        name: "cursor-style-client",
+        version: "1.0.0",
+      },
+    },
+  });
+
+  assert.equal(init.result.serverInfo.name, SERVER_INFO.name);
+  assert.equal(init.result.protocolVersion, "2025-11-25");
+
+  client.writeJsonLine({
+    jsonrpc: "2.0",
+    method: "notifications/initialized",
+    params: {},
+  });
+
+  const tools = client.sendJsonLine({
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/list",
+    params: {},
+  });
+
+  assert.equal(tools.result.tools.length, getTools().length);
 }
 
 async function testEncryptToolUsesFormats() {
@@ -338,6 +449,8 @@ const tests = [
   ["initialize and list tools", testInitializeAndListTools],
   ["rejects tool calls before initialize", testRejectsToolCallsBeforeInitialize],
   ["returns method not found", testMethodNotFound],
+  ["supports lf-only headers", testInitializeAndListToolsWithLfOnlyHeaders],
+  ["supports newline-delimited json", testInitializeAndListToolsWithJsonLines],
   ["encrypt tool uses formats", testEncryptToolUsesFormats],
   ["decrypt tool succeeds", testDecryptToolSuccess],
   ["list ciphers succeeds", testListCiphersSuccess],
